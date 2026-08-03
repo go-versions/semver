@@ -1,3 +1,3 @@
-module github.com/go-pkgx/semver
+module github.com/go-versions/semver
 
 go 1.26.4
