@@ -115,8 +115,26 @@ func (v *Version) Compare(that *Version) int {
 	return 0
 }
 
+// cmpComponents demotes a BARE datestamp — a single component that is a year or
+// later, such as `20230101` — below every SemVer, by prepending three zeroes.
+//
+// The demotion is deliberate: pkgx labels a pre-release with a datestamp, so
+// `20230101` must not outrank `1.0.0`. It keyed on the major alone, which also
+// caught a DOTTED CalVer — `2026.09.07.00` — and a dotted CalVer is not a
+// pre-release label, it is how some projects number their releases.
+//
+// Three projects in the pkgx pantry moved from SemVer to CalVer and keep both
+// sets of tags. Demoting the CalVer made their newest version a decade old:
+//
+//	project              this library      dist.pkgx.dev
+//	facebook.com/folly   0.57.0            2026.9.7.0
+//	facebook.com/wangle  0.13.0            2026.9.7.0
+//	facebook.com/fbthrift 0.31.0           2026.9.7.0
+//
+// A single component carries no SemVer structure to compare with, so reading it
+// as a datestamp is safe. Two or more components are a version: compare them.
 func cmpComponents(v *Version) []int {
-	if v.Major > 1996 && v.Major != inf {
+	if len(v.Components) == 1 && v.Major > 1996 && v.Major != inf {
 		return append([]int{0, 0, 0}, v.Components...)
 	}
 	return v.Components
